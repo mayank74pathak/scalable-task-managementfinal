@@ -123,12 +123,22 @@ def delete_task(task_id: int = Path(..., gt=0)):
 # ----------------------------
 @app.post("/tasks/upload", tags=["File Upload"])
 async def upload_tasks(file: UploadFile = File(...)):
-    if not file.filename.endswith(".csv"):
+    
+    # 1️⃣ Check file extension
+    if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(
             status_code=400,
-            detail="Only CSV files are allowed"
+            detail="Only PDF files are allowed"
+        )
+    
+    # 2️⃣ Optional: Check MIME type
+    if file.content_type != "application/pdf":
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid file type. Upload a valid PDF file"
         )
 
+    # 3️⃣ Read file content
     content = await file.read()
 
     return {
