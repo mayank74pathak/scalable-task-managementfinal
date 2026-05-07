@@ -1,0 +1,49 @@
+services:
+  api:
+    build: .
+    container_name: fastapi_app
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_started
+      redis:
+        condition: service_healthy # ✅ Wait until Redis is ready
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://mayankpathak:qwerty@db:5432/database1
+      REDIS_HOST: redis # ✅ Points to redis service, not localhost
+      REDIS_PORT: 6379
+    restart: always
+
+  db:
+    image: postgres:14.21
+    container_name: postgres_db
+    restart: always
+    environment:
+      POSTGRES_USER: mayankpathak
+      POSTGRES_PASSWORD: qwerty
+      POSTGRES_DB: database1
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis: # ✅ New Redis service
+    image: redis:7-alpine
+    container_name: redis_cache
+    restart: always
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    volumes:
+      - redis_data:/data # ✅ Persist cache across restarts
+
+volumes:
+  postgres_data:
+  redis_data: # ✅ New volume for Redis

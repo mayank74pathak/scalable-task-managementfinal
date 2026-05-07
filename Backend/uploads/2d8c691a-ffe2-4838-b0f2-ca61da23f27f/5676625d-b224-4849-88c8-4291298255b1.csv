@@ -1,0 +1,6 @@
+title,description,status
+Learn FastAPI,Understand basics of FastAPI,pending
+Build Backend API,Implement CRUD operations,in_progress
+Fix Authentication Bug,Resolve login issue,done
+Add Redis Caching,Improve performance,pending
+Deploy Project,Deploy on Render,in_progress
