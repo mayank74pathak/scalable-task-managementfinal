@@ -24,7 +24,7 @@ interface AuthState {
 }
 
 // ─── API ──────────────────────────────────────────────────────────────────────
-const BASE = "http://localhost:8000/api/v1";
+const BASE = "import.meta.env.VITE_API_URL + "/api/v1";
 
 async function apiFetch<T>(
   path: string,
