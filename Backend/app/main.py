@@ -19,7 +19,7 @@ app = FastAPI(title="Task Management API")
 # -------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173","https://scalable-task-managementfinal.vercel.app/"],  # Vite dev server
+    allow_origins=["http://localhost:5173","https://scalable-task-managementfinal.vercel.app"],  # Vite dev server
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
