@@ -16,7 +16,11 @@ class TaskService:
     def get_tasks(db: Session, page: int, limit: int, status: str, user_id):
 
         cache_key = f"tasks:{user_id}:{page}:{limit}:{status or 'all'}"
-        cached = redis_client.get(cache_key)
+
+        cached = None
+
+        if redis_client:
+            cached = redis_client.get(cache_key)
 
         if cached:
             data = json.loads(cached)
@@ -31,18 +35,23 @@ class TaskService:
         tasks = query.offset((page - 1) * limit).limit(limit).all()
 
         # cache response
-        redis_client.setex(cache_key, CACHE_TTL, json.dumps({
-            "total": total,
-            "tasks": [
-                {
-                    "id": str(t.id),
-                    "title": t.title,
-                    "description": t.description,
-                    "status": t.status,
-                    "created_at": t.created_at.isoformat()
-                } for t in tasks
-            ]
-        }))
+        if redis_client:
+            redis_client.setex(
+                cache_key,
+                CACHE_TTL,
+                json.dumps({
+                    "total": total,
+                    "tasks": [
+                        {
+                            "id": str(t.id),
+                            "title": t.title,
+                            "description": t.description,
+                            "status": t.status,
+                            "created_at": t.created_at.isoformat()
+                        } for t in tasks
+                    ]
+                })
+            )
 
         return total, tasks
 
@@ -54,24 +63,32 @@ class TaskService:
     def get_task(db: Session, task_id: UUID, user_id):
 
         cache_key = f"tasks:{user_id}:single:{task_id}"
-        cached = redis_client.get(cache_key)
+
+        cached = None
+
+        if redis_client:
+            cached = redis_client.get(cache_key)
 
         if cached:
             return json.loads(cached)
 
         task = db.query(Task).filter(
             Task.id == task_id,
-            Task.user_id == user_id   # 🔥 SECURITY
+            Task.user_id == user_id
         ).first()
 
-        if task:
-            redis_client.setex(cache_key, CACHE_TTL, json.dumps({
-                "id": str(task.id),
-                "title": task.title,
-                "description": task.description,
-                "status": task.status,
-                "created_at": task.created_at.isoformat()
-            }))
+        if task and redis_client:
+            redis_client.setex(
+                cache_key,
+                CACHE_TTL,
+                json.dumps({
+                    "id": str(task.id),
+                    "title": task.title,
+                    "description": task.description,
+                    "status": task.status,
+                    "created_at": task.created_at.isoformat()
+                })
+            )
 
         return task
 
@@ -85,14 +102,14 @@ class TaskService:
         new_task = Task(
             title=title,
             description=description,
-            user_id=user_id   # 🔥 attach owner
+            user_id=user_id
         )
 
         db.add(new_task)
         db.commit()
         db.refresh(new_task)
 
-        TaskService._invalidate_list_cache(user_id)   # 🔥 only this user's cache
+        TaskService._invalidate_list_cache(user_id)
 
         return new_task
 
@@ -109,7 +126,9 @@ class TaskService:
         db.commit()
         db.refresh(task)
 
-        redis_client.delete(f"tasks:{task.user_id}:single:{task.id}")
+        if redis_client:
+            redis_client.delete(f"tasks:{task.user_id}:single:{task.id}")
+
         TaskService._invalidate_list_cache(task.user_id)
 
         return task
@@ -127,7 +146,9 @@ class TaskService:
         db.delete(task)
         db.commit()
 
-        redis_client.delete(f"tasks:{user_id}:single:{task_id}")
+        if redis_client:
+            redis_client.delete(f"tasks:{user_id}:single:{task_id}")
+
         TaskService._invalidate_list_cache(user_id)
 
 
@@ -136,5 +157,9 @@ class TaskService:
     # -------------------------
     @staticmethod
     def _invalidate_list_cache(user_id):
+
+        if not redis_client:
+            return
+
         for key in redis_client.scan_iter(f"tasks:{user_id}:*"):
             redis_client.delete(key)
