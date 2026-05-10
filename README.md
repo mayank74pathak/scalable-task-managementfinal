@@ -1,168 +1,289 @@
-# Scalable Task Management — Deployment Guide
+# Scalable Task Management System
 
-This guide explains how to deploy the full stack using:
+A production-ready full-stack task management application built using FastAPI, React, PostgreSQL, Redis, and Docker.
 
-- **Frontend:** Vercel
-- **Backend (Docker):** Render.com
-- **Redis:** Upstash
-- **PostgreSQL:** Neon
+## Live Demo
+
+* Frontend: [https://scalable-task-managementfinal.vercel.app](https://scalable-task-managementfinal.vercel.app)
+* Backend API Docs: [https://scalable-task-managementfinal.onrender.com/docs](https://scalable-task-managementfinal.onrender.com/docs)
 
 ---
 
-## 1) Architecture
+# Features
 
-- The **Frontend** (React + Vite) is deployed on Vercel.
-- The **Backend** (FastAPI, Dockerized) is deployed as a Render Web Service.
-- **PostgreSQL** is provided by Neon.
-- **Redis** is provided by Upstash.
+## Authentication
 
-Frontend calls backend at:
+* JWT-based authentication
+* User signup and login
+* Protected API routes
+* Session handling
 
-```txt
-${VITE_API_URL}/api/v1
+## Task Management
+
+* Create tasks
+* Update tasks
+* Delete tasks
+* Task status management
+* Pagination support
+* User-specific task isolation
+
+## CSV Import
+
+* Upload CSV files
+* Bulk task creation from CSV
+* CSV validation and parsing
+* Error handling for invalid rows
+
+## Redis Caching
+
+* Task caching using Redis
+* Cache invalidation support
+* Graceful Redis fallback handling
+
+## Production Features
+
+* Dockerized backend
+* PostgreSQL database integration
+* Redis caching layer
+* Environment variable configuration
+* CORS configuration for production deployment
+
+---
+
+# Tech Stack
+
+## Frontend
+
+* React
+* TypeScript
+* Vite
+
+## Backend
+
+* FastAPI
+* SQLAlchemy
+* Pydantic
+* JWT Authentication
+
+## Database & Cache
+
+* PostgreSQL (Neon)
+* Redis (Upstash)
+
+## Deployment
+
+* Frontend: Vercel
+* Backend: Render
+* Database: Neon PostgreSQL
+* Cache: Upstash Redis
+* Containerization: Docker
+
+---
+
+# Project Structure
+
+```bash
+scalable-task-managementfinal/
+│
+├── Frontend/
+│   ├── src/
+│   ├── public/
+│   ├── package.json
+│   └── vite.config.ts
+│
+├── Backend/
+│   ├── app/
+│   │   ├── controllers/
+│   │   ├── services/
+│   │   ├── models/
+│   │   ├── schemas/
+│   │   ├── utils/
+│   │   └── main.py
+│   │
+│   ├── Dockerfile
+│   ├── requirements.txt
+│   └── docker-compose.yml
+│
+└── README.md
 ```
 
 ---
 
-## 2) Prerequisites
+# Environment Variables
 
-Have accounts ready:
+## Backend (.env)
 
-- https://vercel.com
-- https://render.com
-- https://upstash.com
-- https://neon.tech
-
-Also ensure your repository contains:
-
-- `Frontend/` (Vite app)
-- `Backend/` (FastAPI app + Dockerfile)
-
----
-
-## 3) Deploy PostgreSQL on Neon
-
-1. Create a Neon project.
-2. Create a database (default is fine).
-3. Copy the **connection string** (pooled or direct).
-4. Save it for Render as `DATABASE_URL`.
-
-Example format:
-
-```txt
-postgresql://USER:PASSWORD@HOST/DB?sslmode=require
-```
-
----
-
-## 4) Deploy Redis on Upstash
-
-1. Create an Upstash Redis database.
-2. Copy:
-   - **UPSTASH_REDIS_REST_URL**
-   - **UPSTASH_REDIS_REST_TOKEN**
-3. Save these for Render environment variables.
-
----
-
-## 5) Deploy Backend on Render (Docker)
-
-1. In Render, click **New +** → **Web Service**.
-2. Connect your GitHub repo.
-3. Configure:
-   - **Root Directory:** `Backend`
-   - **Runtime:** Docker
-   - Render should detect `Backend/Dockerfile`.
-4. Set required environment variables in Render:
-
-```txt
-DATABASE_URL=<your_neon_postgres_url>
-UPSTASH_REDIS_REST_URL=<your_upstash_rest_url>
-UPSTASH_REDIS_REST_TOKEN=<your_upstash_rest_token>
-SECRET_KEY=<strong_random_secret>
+```env
+DATABASE_URL=your_postgresql_connection_string
+SECRET_KEY=your_secret_key
 ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
+ACCESS_TOKEN_EXPIRE_MINUTES=60
+REDIS_URL=your_redis_connection_string
 ```
 
-5. Deploy and wait until service is healthy.
-6. Copy backend public URL, for example:
+## Frontend (.env)
 
-```txt
-https://scalable-task-managementfinal.onrender.com
-```
-
-> Make sure backend CORS allows your Vercel domain.
-
----
-
-## 6) Deploy Frontend on Vercel
-
-1. In Vercel, click **Add New...** → **Project**.
-2. Import your repository.
-3. Configure build settings:
-   - **Framework Preset:** Vite
-   - **Root Directory:** `Frontend`
-   - **Build Command:** `npm run build`
-   - **Output Directory:** `dist`
-4. Add environment variable:
-
-```txt
-VITE_API_URL=https://scalable-task-managementfinal.onrender.com
-```
-
-5. Deploy.
-
-Optional local file example (`Frontend/.env`):
-
-```txt
+```env
 VITE_API_URL=https://scalable-task-managementfinal.onrender.com
 ```
 
 ---
 
-## 7) Post-Deploy Checklist
+# Local Setup
 
-- Open frontend Vercel URL.
-- Test signup/login.
-- Create/update/delete tasks.
-- Verify backend logs in Render for API errors.
-- Confirm Neon connection works (no DB connection errors).
-- Confirm Upstash connection works (no Redis errors).
+## Clone Repository
 
----
-
-## 8) Common Issues
-
-### CORS errors
-- Add your Vercel domain to backend allowed origins.
-
-### 401/invalid token
-- Verify `SECRET_KEY` and JWT settings on backend.
-
-### Database connection failures
-- Recheck Neon `DATABASE_URL` and SSL params.
-
-### Redis errors
-- Verify Upstash URL/token are correct and active.
-
-### Frontend cannot reach backend
-- Confirm `VITE_API_URL` is set in Vercel Production env and redeploy.
+```bash
+git clone https://github.com/mayank74pathak/scalable-task-managementfinal.git
+cd scalable-task-managementfinal
+```
 
 ---
 
-## 9) Useful Commands
+# Backend Setup
 
-Frontend build:
+```bash
+cd Backend
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+Run Backend:
+
+```bash
+uvicorn app.main:app --reload
+```
+
+Backend runs on:
+
+```bash
+http://localhost:8000
+```
+
+---
+
+# Frontend Setup
 
 ```bash
 cd Frontend
 npm install
-npm run build
+npm run dev
 ```
 
-Backend local Docker build (optional verification):
+Frontend runs on:
 
 ```bash
-cd Backend
-docker build -t task-backend .
+http://localhost:5173
 ```
+
+---
+
+# Docker Setup
+
+## Run Using Docker Compose
+
+```bash
+docker compose up --build
+```
+
+Services:
+
+* FastAPI Backend
+* PostgreSQL
+* Redis
+
+---
+
+# API Endpoints
+
+## Authentication
+
+| Method | Endpoint            | Description   |
+| ------ | ------------------- | ------------- |
+| POST   | /api/v1/auth/signup | Register user |
+| POST   | /api/v1/auth/login  | Login user    |
+
+## Tasks
+
+| Method | Endpoint           | Description     |
+| ------ | ------------------ | --------------- |
+| GET    | /api/v1/tasks      | Get all tasks   |
+| GET    | /api/v1/tasks/{id} | Get single task |
+| POST   | /api/v1/tasks      | Create task     |
+| PUT    | /api/v1/tasks/{id} | Update task     |
+| DELETE | /api/v1/tasks/{id} | Delete task     |
+
+## File Upload
+
+| Method | Endpoint                   | Description      |
+| ------ | -------------------------- | ---------------- |
+| POST   | /api/v1/files/import-tasks | Import CSV tasks |
+
+---
+
+# Sample CSV Format
+
+```csv
+title,description,status
+Learn FastAPI,Study backend concepts,pending
+Build Project,Complete full-stack app,in_progress
+Deploy Application,Deploy on Render and Vercel,done
+```
+
+---
+
+# Deployment Architecture
+
+```text
+Frontend (Vercel)
+        ↓
+FastAPI Backend (Render)
+        ↓
+PostgreSQL (Neon)
+        ↓
+Redis Cache (Upstash)
+```
+
+---
+
+# Key Learning Outcomes
+
+* Full-stack application development
+* REST API design
+* JWT authentication
+* Docker containerization
+* PostgreSQL integration
+* Redis caching strategies
+* Production deployment
+* Environment variable management
+* CSV file processing
+* Cache invalidation
+* CORS handling
+
+---
+
+# Future Improvements
+
+* Role-based access control
+* WebSocket real-time updates
+* Background task queues
+* Email notifications
+* Task deadlines and reminders
+* Drag-and-drop Kanban board
+* CI/CD pipeline
+* Kubernetes deployment
+
+---
+
+# Author
+
+Mayank Pathak
+
+GitHub: [https://github.com/mayank74pathak](https://github.com/mayank74pathak)
+
+---
+
+# License
+
+This project is developed for learning and portfolio purposes.
